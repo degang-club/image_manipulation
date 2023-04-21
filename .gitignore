@@ -30,6 +30,7 @@
 
 # Executables
 *.exe
+*.exe.stackdump
 *.out
 *.app
 *.i*86
@@ -50,3 +51,10 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# VS code stuff
+.vscode
+
+# Testing texture file
+*.byt
+*.png
