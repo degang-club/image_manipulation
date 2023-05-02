@@ -75,18 +75,18 @@ void print_buckets(BUCKET **buckets, int size)
     }
 }
 
-void quantize_median_cut(TEXTURE tex, unsigned int palette_size)
+void quantize_median_cut(IMAGE img, unsigned int palette_size)
 {
-    unsigned int tex_size = tex.height * tex.width;
+    unsigned int img_size = img.height * img.width;
     uint8_t *pixels;
-    pixels = malloc(tex_size * 3);
-    memcpy(pixels, tex.imagedata, tex_size * 3);
+    pixels = malloc(img_size * 3);
+    memcpy(pixels, img.image_data, img_size * 3);
 
     unsigned int unique_col_count = 0;    
     uint8_t *unique_colors;
-    unique_colors = malloc(tex_size * 3);
+    unique_colors = malloc(img_size * 3);
     
-    for (int i=0; i < tex_size; i++) {
+    for (int i=0; i < img_size; i++) {
         bool found = false;
         for (size_t j = 0; j < unique_col_count; j++) {
             if (pixels[i * 3 + RED] == unique_colors[j * 3 + RED] 
@@ -195,10 +195,10 @@ void quantize_median_cut(TEXTURE tex, unsigned int palette_size)
 
     FILE *fs = fopen("test_output_test.byt", "w");
 
-	fwrite(&tex.width, 2, 1, fs);
-	fwrite(&tex.height, 2, 1, fs);
+	fwrite(&img.width, 2, 1, fs);
+	fwrite(&img.height, 2, 1, fs);
 
-	for (size_t i = 0; i < tex.height * tex.width; i++)
+	for (size_t i = 0; i < img.height * img.width; i++)
 	{
         int index = get_colormapped_pixel(pixels[i * 3 + RED],
             pixels[i * 3 + GREEN],

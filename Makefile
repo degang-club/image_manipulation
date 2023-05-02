@@ -1,20 +1,23 @@
 CC=gcc
-CFLAGS=-g -static -std=c11 -Wall -pedantic -I. -lm
+CFLAGS=-g -static -std=c99 -Wall -pedantic -Iinclude/ -lm
 LDFLAGS=-L/usr/lib
-OBJS=color_quantization.o dithering.o
+OBJS=src/color_quantization.o src/tga.o src/img.o
 
-all: $(OBJS)
+all: libafbeelding.a
 
 %.o: %.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-color_quantization_test: color_quantization_test.o color_quantization.o
-	$(CC) -o $@ $^ $(CFLAGS)
+libafbeelding.a: $(OBJS)
+	$(AR) rcs $@ $(OBJS)
 
-dithering_test: dithering.o
-	$(CC) -o $@ $< $(CFLAGS)
+color_quantization_test: color_quantization_test.o libafbeelding.a
+	$(CC) -o $@ $< libafbeelding.a $(CFLAGS)
+	
+libafbeelding_test: libafbeelding_test.o libafbeelding.a
+	$(CC) -o $@ $< libafbeelding.a
 
-.PHONY: clean
+.PHONY: clean color_quantization_test
 
 clean:
-	$(RM) *.o *.exe color_quantization_test
+	$(RM) src/*.o *.o *.exe color_quantization_test libafbeelding_test

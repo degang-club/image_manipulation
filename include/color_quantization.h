@@ -1,5 +1,5 @@
-#ifndef COLOR_QUANTIZATION_H
-#define COLOR_QUANTIZATION_H
+#ifndef LIBAFBEELDING_COLOR_QUANTIZATION_H
+#define LIBAFBEELDING_COLOR_QUANTIZATION_H
 #include "img.h"
 
 typedef struct {
@@ -14,6 +14,6 @@ typedef struct {
 
 int get_colormapped_pixel(int r, int g, int b, BUCKET **colormap, int size);
 void sort_colors_channel(BUCKET *bucket);
-void quantize_median_cut(TEXTURE tex, unsigned int palette_size);
+void quantize_median_cut(IMAGE img, unsigned int palette_size);
 
 #endif

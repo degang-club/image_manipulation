@@ -4,33 +4,33 @@
 #include "img.h"
 #include "color_quantization.h"
 
-TEXTURE read_imagedata()
+IMAGE read_imagedata()
 {
 	FILE *f = fopen("test_output.byt", "r");
 
-    TEXTURE tex;
+    IMAGE img;
 
-	fread(&tex.width, sizeof(tex.width), 1, f);
-	fread(&tex.height, sizeof(tex.height), 1, f);
+	fread(&img.width, sizeof(img.width), 1, f);
+	fread(&img.height, sizeof(img.height), 1, f);
 
-    tex.imagedata = malloc((tex.width * tex.height) * 3);
+    img.image_data = malloc((img.width * img.height) * 3);
 
-	for (size_t i = 0; i < tex.width * tex.height; i++)
+	for (size_t i = 0; i < img.width * img.height; i++)
 	{
-		fread(&tex.imagedata[i * 3], 1, 1, f);
-		fread(&tex.imagedata[i * 3 + 1], 1, 1, f);
-		fread(&tex.imagedata[i * 3 + 2], 1, 1, f);
+		fread(&img.image_data[i * 3], 1, 1, f);
+		fread(&img.image_data[i * 3 + 1], 1, 1, f);
+		fread(&img.image_data[i * 3 + 2], 1, 1, f);
 	}
 
 	fclose(f);
-	return tex;
+	return img;
 }
 
 int main(void)
 {
-	TEXTURE tex = read_imagedata();
-	quantize_median_cut(tex, 256);
+	IMAGE img = read_imagedata();
+	quantize_median_cut(img, 256);
 
-	free(tex.imagedata);
+	free(img.image_data);
     return 0;
 }
