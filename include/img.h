@@ -27,6 +27,17 @@ typedef struct {
     uint8_t *palette_data;
 } IMAGE;
 
+typedef struct {
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
+} COLOR;
+
+typedef struct {
+    uint64_t size;
+    COLOR *colors;
+} PALETTE;
+
 IMAGE afb_image_init(void);
 void afb_image_free(IMAGE *img);
 AFB_ERROR afb_palette_save(IMAGE *img, char *path);

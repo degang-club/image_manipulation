@@ -2,35 +2,22 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "img.h"
+#include "tga.h"
 #include "color_quantization.h"
-
-IMAGE read_imagedata()
-{
-	FILE *f = fopen("test_output.byt", "r");
-
-    IMAGE img;
-
-	fread(&img.width, sizeof(img.width), 1, f);
-	fread(&img.height, sizeof(img.height), 1, f);
-
-    img.image_data = malloc((img.width * img.height) * 3);
-
-	for (size_t i = 0; i < img.width * img.height; i++)
-	{
-		fread(&img.image_data[i * 3], 1, 1, f);
-		fread(&img.image_data[i * 3 + 1], 1, 1, f);
-		fread(&img.image_data[i * 3 + 2], 1, 1, f);
-	}
-
-	fclose(f);
-	return img;
-}
 
 int main(void)
 {
-	IMAGE img = read_imagedata();
-	quantize_median_cut(img, 256);
+	IMAGE img = afb_image_init();
+	PALETTE pal;
+	tga_load_file(&img, "../tga/test_images/kodim23_rgb_no-rle_top-left.tga");
 
-	free(img.image_data);
+	pal = quantize_median_cut(img, 256);
+	for (int i=0; i < pal.size; i++) {
+		printf("R: 0x%02x G: 0x%02x B: 0x%02x\n", pal.colors[i].red,
+			   pal.colors[i].green, pal.colors[i].blue);
+	}
+	// afb_image_save(&img, "test_output.afb");
+	// afb_palette_save(&img, "test_output_palette.afb");
+
     return 0;
 }
