@@ -5,9 +5,8 @@
 
 IMAGE afb_image_init(void)
 {
-	IMAGE img = { .image_type = NONE, .width = 0, .height = 0, .image_data = NULL,
+	return (IMAGE){ .image_type = NONE, .width = 0, .height = 0, .image_data = NULL,
 		.palette_size = 0, .palette_data = NULL };
-	return img;
 }
 
 void afb_image_free(IMAGE *img)
@@ -105,22 +104,28 @@ AFB_ERROR image_to_gray(IMAGE *img)
 	return AFB_E_SUCCESS;
 }
 
-AFB_ERROR afb_palette_save(IMAGE *img, char *path)
+AFB_ERROR afb_palette_save(PALETTE *pal, char *path)
 {
-	if(img->image_type != PALETTED) return AFB_E_WRONG_TYPE;
-
 	FILE *f = fopen(path, "w");
+	uint8_t r,g,b;
 	
 	if (f == NULL)
 		return AFB_E_FILE_ERROR;
 
 	fwrite(AFB_MAGIC, sizeof(AFB_MAGIC) - 1, 1, f);
 
-	fwrite(&img->palette_size, 4, 1, f);
+	fwrite(&pal->size, 4, 1, f);
 	uint32_t width_value = 1;
 	fwrite(&width_value, 4, 1, f);
 	
-	fwrite(&img->palette_data[0], 3 * img->palette_size, 1, f);
+	for (int i=0; i < pal->size; i++) {
+		r = afb_rgba_get_r(pal->colors[i]);
+		g = afb_rgba_get_g(pal->colors[i]);
+		b = afb_rgba_get_b(pal->colors[i]);
+		fwrite(&r, 1, 1, f);
+		fwrite(&g, 1, 1, f);
+		fwrite(&b, 1, 1, f);
+	}
 
 	fclose(f);
 	return AFB_E_SUCCESS;
@@ -157,3 +162,13 @@ AFB_ERROR afb_image_save(IMAGE *img, char *path)
 	fclose(f);
 	return AFB_E_SUCCESS;
 }
+
+PALETTE afb_palette_init(void)
+{
+	return (PALETTE){ .size = 0, .colors = NULL };
+}
+
+// COLOR get_col(uint8_t *data, int i)
+// {
+//     return (COLOR){ .red=data[i * 3], .green=data[i * 3 + 1], .blue=data[i * 3 + 2] };
+// }

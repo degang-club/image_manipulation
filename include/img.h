@@ -28,22 +28,25 @@ typedef struct {
 } IMAGE;
 
 typedef struct {
-    uint8_t red;
-    uint8_t green;
-    uint8_t blue;
-} COLOR;
-
-typedef struct {
     uint64_t size;
-    COLOR *colors;
+    uint32_t *colors;
 } PALETTE;
+
+#define afb_rgba_get_r(c) ((c >> 24) & 0xff)
+#define afb_rgba_get_g(c) ((c >> 16) & 0xff)
+#define afb_rgba_get_b(c) ((c >> 8) & 0xff)
+#define afb_rgba_get_a(c) (c & 0xff)
+#define afb_to_rgba(r,g,b,a) ((r << 24) + (g << 16) + (b << 8) + a)
 
 IMAGE afb_image_init(void);
 void afb_image_free(IMAGE *img);
-AFB_ERROR afb_palette_save(IMAGE *img, char *path);
+AFB_ERROR afb_palette_save(PALETTE *pal, char *path);
 AFB_ERROR afb_image_save(IMAGE *img, char *path);
 AFB_ERROR image_to_pal(IMAGE *img);
 AFB_ERROR image_to_rgb(IMAGE *img);
+PALETTE afb_palette_init(void);
+void afb_palette_free(PALETTE *pal);
 
+// COLOR get_col(uint8_t *data, int i);
 
 #endif
