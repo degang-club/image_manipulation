@@ -7,6 +7,7 @@ AFB_ERROR tga_load_file(IMAGE *img, char *path)
 {
 	FILE *f_tga;
 	uint32_t image_size;
+	uint8_t red, green, blue;
 	int i;
 	
 	uint8_t idLength; // Unused
@@ -48,15 +49,13 @@ AFB_ERROR tga_load_file(IMAGE *img, char *path)
 	img->height = height;
 
 	if (mapType == TGA_MAP_COLORMAP) {
-		img->palette_data = malloc(entryLength * 3);
-		img->palette_size = entryLength;
+		img->palette.colors = malloc(entryLength * sizeof(*img->palette.colors));
+		img->palette.size = entryLength;
 		for (i=0; i < entryLength; i++) {
-			fread(&img->palette_data[i * 3 + 2],
-					1, 1, f_tga); // Blue
-			fread(&img->palette_data[i * 3 + 1],
-					1, 1, f_tga); // Green
-			fread(&img->palette_data[i * 3],
-					1, 1, f_tga); // Red
+			fread(&blue, 1, 1, f_tga); // Blue
+			fread(&green, 1, 1, f_tga); // Green
+			fread(&red, 1, 1, f_tga); // Red
+			img->palette.colors[i] = afb_to_rgba(red, green, blue, 0);
 		}
 	}
 

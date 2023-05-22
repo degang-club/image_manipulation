@@ -25,7 +25,7 @@ int main()
 	//image_to_rgb(&img);
 	image_to_pal(&img);
 	afb_image_save(&img, "test_output.afb");
-	afb_palette_save(&img, "test_output_palette.afb");
+	afb_palette_save(&img.palette, "test_output_palette.afb");
 	
 	return 0;
 }

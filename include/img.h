@@ -18,19 +18,18 @@ typedef enum {
 } IMAGE_TYPE;
 
 typedef struct {
+    uint64_t size;
+    uint32_t *colors;
+} PALETTE;
+
+typedef struct {
     IMAGE_TYPE image_type;
     uint32_t width;
     uint32_t height;
     uint8_t *image_data;
     
-    uint64_t palette_size;
-    uint8_t *palette_data;
+    PALETTE palette;
 } IMAGE;
-
-typedef struct {
-    uint64_t size;
-    uint32_t *colors;
-} PALETTE;
 
 #define afb_rgba_get_r(c) ((c >> 24) & 0xff)
 #define afb_rgba_get_g(c) ((c >> 16) & 0xff)
@@ -46,7 +45,5 @@ AFB_ERROR image_to_pal(IMAGE *img);
 AFB_ERROR image_to_rgb(IMAGE *img);
 PALETTE afb_palette_init(void);
 void afb_palette_free(PALETTE *pal);
-
-// COLOR get_col(uint8_t *data, int i);
 
 #endif
