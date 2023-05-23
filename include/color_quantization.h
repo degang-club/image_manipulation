@@ -8,8 +8,6 @@ typedef struct {
     uint8_t largest_channel;
 } BUCKET;
 
-void bottom_up_merge_sort(PALETTE *p);
-
 void sort_colors_channel(BUCKET *bucket);
 PALETTE quantize_median_cut(IMAGE img, unsigned int palette_size);
 

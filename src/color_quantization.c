@@ -13,17 +13,6 @@
 #define GREEN 1
 #define BLUE 2
 
-int check_sort(uint32_t *pixels, int size, uint32_t mask)
-{
-    uint32_t previous_color = 0;
-    for (int i = 0; i < size; i++) {
-        if ((previous_color & mask) > (pixels[i] & mask))
-            return 1;
-        previous_color = pixels[i];
-    }
-    return 0;
-}
-
 static int cmp_r(const void *a, const void *b)
 {
 	return (*(uint32_t *)a & 0xff000000) < (*(uint32_t *)b & 0xff000000) ? -1 : (*(uint32_t *)a  & 0xff000000) > (*(uint32_t *)b & 0xff000000);
@@ -50,7 +39,6 @@ PALETTE afb_unique_colors(uint8_t *img_data, unsigned int img_size)
 
     /* Loop through the entire image */
     for (int i=0; i < img_size; i++) {
-        // col = get_col(img_data, i);
         col = afb_to_rgba(img_data[i * 3], img_data[i * 3 + 1], img_data[i * 3 + 2], 0);
         found = false;
         /* Compare against all other colors in the palette*/
