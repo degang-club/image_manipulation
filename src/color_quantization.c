@@ -24,6 +24,21 @@ int check_sort(uint32_t *pixels, int size, uint32_t mask)
     return 0;
 }
 
+static int cmp_r(const void *a, const void *b)
+{
+	return (*(uint32_t *)a & 0xff000000) < (*(uint32_t *)b & 0xff000000) ? -1 : (*(uint32_t *)a  & 0xff000000) > (*(uint32_t *)b & 0xff000000);
+}
+
+static int cmp_g(const void *a, const void *b)
+{
+	return (*(uint32_t *)a & 0x00ff0000) < (*(uint32_t *)b & 0x00ff0000) ? -1 : (*(uint32_t *)a  & 0x00ff0000) > (*(uint32_t *)b & 0x00ff0000);
+}
+
+static int cmp_b(const void *a, const void *b)
+{
+	return (*(uint32_t *)a & 0x0000ff00) < (*(uint32_t *)b & 0x0000ff00) ? -1 : (*(uint32_t *)a  & 0x0000ff00) > (*(uint32_t *)b & 0x0000ff00);
+}
+
 /* Get all the unique colors from the image */
 PALETTE afb_unique_colors(uint8_t *img_data, unsigned int img_size)
 {
@@ -159,7 +174,6 @@ void sort_colors_channel(BUCKET *bucket)
     uint16_t maxG = 0;
     uint16_t minB = 255;
     uint16_t maxB = 0;
-    uint32_t previous_pixel = 0;
 
     /* Go through all the values in a bucket and find the smallest and the
        biggest value for each channel */
@@ -180,26 +194,17 @@ void sort_colors_channel(BUCKET *bucket)
     int b_range =  bucket->ranges[BLUE] = maxB - minB;
 
     /* Find which channel has the biggest range */
-    int col_mask = 0xff000000;
+    int (*sort_function)() = cmp_r;
     bucket->largest_channel = RED;
     if(g_range >= r_range && g_range >= b_range) {
-        col_mask = 0x00ff0000;
+	sort_function = cmp_g;
         bucket->largest_channel = GREEN;
     }
     if(b_range >= r_range && b_range >= g_range) {
-        col_mask = 0x0000ff00;
+	sort_function = cmp_b;
         bucket->largest_channel = BLUE;
     }
 
-    /* Sort the bucket with bubble sort */
-    while(check_sort(bucket->palette.colors, bucket->palette.size, col_mask)) {
-        previous_pixel = 0;
-        for (int i = 0; i < bucket->palette.size; i++) {
-            if ((previous_pixel & col_mask) > (bucket->palette.colors[i] & col_mask)) {
-                bucket->palette.colors[(i - 1)] = bucket->palette.colors[i];
-                bucket->palette.colors[i] =   previous_pixel;
-            }
-            previous_pixel = bucket->palette.colors[i];
-        }
-    }
+    /* Sort the bucket */
+    qsort(bucket->palette.colors, bucket->palette.size, sizeof(uint32_t), sort_function);
 }
