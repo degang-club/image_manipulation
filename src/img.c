@@ -1,6 +1,8 @@
-#include <stdio.h>
 #include <float.h>
+#include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "img.h"
 
 IMAGE afb_image_init(void)
@@ -44,57 +46,54 @@ AFB_ERROR image_to_rgb(IMAGE *img)
 	return AFB_E_SUCCESS;
 }
 
-AFB_ERROR image_to_pal(IMAGE *img)
+AFB_ERROR image_to_pal(IMAGE *img, PALETTE *pal)
 {
 	if(img->image_type == PALETTED) return AFB_E_WRONG_TYPE;
 
-	unsigned int i_pal;
 	unsigned int image_size = img->width * img->height;
 
 	if (img->image_type == TRUECOLOR) {
-		img->palette.size = 0;
 		uint8_t *new_image_data = malloc(image_size);
-		uint64_t alloced_palette = 96;
-		PALETTE new_palette;
-		new_palette.colors = malloc(alloced_palette);
-		uint8_t red, green, blue;
+		int red, green, blue;
+		double current_squared_distance = 0;
+		double previous_squared_distance = DBL_MAX;
+		int smallest_distance_index = 0;
 
 		for (unsigned int i=0; i < image_size; i++) {
+			current_squared_distance = 0;
+			previous_squared_distance = DBL_MAX;
+			smallest_distance_index = 0;
+
 			red = img->image_data[i * 3 + 0];
 			green = img->image_data[i * 3 + 1];
 			blue = img->image_data[i * 3 + 2];
-
-			// Check if color is present in the color pallete
-			for (i_pal = 0; i_pal < img->palette.size; i_pal++) {
-				if (red == afb_rgba_get_r(new_palette.colors[i_pal])
-					&& green == afb_rgba_get_g(new_palette.colors[i_pal])
-					&& blue == afb_rgba_get_b(new_palette.colors[i_pal])) {
-					new_image_data[i] = i_pal;
-					break;
-				}
-			}
 			
-			// Add color to color pallete
-			if (i_pal == img->palette.size) {
-
-				if(img->palette.size * 4 >= alloced_palette) {
-					alloced_palette += 96;
-					new_palette.colors = realloc(new_palette.colors, alloced_palette * sizeof(*new_palette.colors));
+			for (int y = 0; y < pal->size; y++) {
+				current_squared_distance = pow(red - (uint8_t)afb_rgba_get_r(pal->colors[y]), 2)
+					+ pow(green - (uint8_t)afb_rgba_get_g(pal->colors[y]), 2)
+					+ pow(blue - (uint8_t)afb_rgba_get_b(pal->colors[y]), 2);
+				if (current_squared_distance < previous_squared_distance)
+				{
+					previous_squared_distance = current_squared_distance;
+					smallest_distance_index = y;
 				}
-
-				new_palette.colors[img->palette.size] = afb_to_rgba(red, green, blue, 0);
-				new_image_data[i] = img->palette.size;
-				img->palette.size++;
 			}
+			new_image_data[i] = smallest_distance_index;
 		}
 
 		// Check if these are null
-		free(img->image_data);
-		free(img->palette.colors);
+		if (img->image_data != NULL)
+			free(img->image_data);
+
+		if (img->palette.colors != NULL)
+			free(img->palette.colors);
 		
 		img->image_type = PALETTED;
 		img->image_data = new_image_data;
-		img->palette.colors = new_palette.colors;
+		img->palette.size = pal->size;
+
+		img->palette.colors = malloc(pal->size * sizeof(uint32_t));
+		memcpy(img->palette.colors, pal->colors, pal->size * sizeof(uint32_t));
 	}
 	return AFB_E_SUCCESS;
 }
@@ -171,4 +170,9 @@ AFB_ERROR afb_image_save(IMAGE *img, char *path)
 PALETTE afb_palette_init(void)
 {
 	return (PALETTE){ .size = 0, .colors = NULL };
+}
+
+void afb_palette_free(PALETTE *pal)
+{
+	free(pal->colors);
 }

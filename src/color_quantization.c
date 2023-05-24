@@ -13,51 +13,63 @@
 #define GREEN 1
 #define BLUE 2
 
+static int cmp(const void *a, const void *b)
+{
+	return ((*(uint32_t *)a > *(uint32_t *)b) - (*(uint32_t *)a < *(uint32_t *)b));
+}
+
 static int cmp_r(const void *a, const void *b)
 {
-	return (*(uint32_t *)a & 0xff000000) < (*(uint32_t *)b & 0xff000000) ? -1 : (*(uint32_t *)a  & 0xff000000) > (*(uint32_t *)b & 0xff000000);
+	return ((*(uint32_t *)a & 0xff000000) > (*(uint32_t *)b & 0xff000000)) - ((*(uint32_t *)a  & 0xff000000) < (*(uint32_t *)b & 0xff000000));
 }
 
 static int cmp_g(const void *a, const void *b)
 {
-	return (*(uint32_t *)a & 0x00ff0000) < (*(uint32_t *)b & 0x00ff0000) ? -1 : (*(uint32_t *)a  & 0x00ff0000) > (*(uint32_t *)b & 0x00ff0000);
+	return ((*(uint32_t *)a & 0x00ff0000) > (*(uint32_t *)b & 0x00ff0000)) - ((*(uint32_t *)a  & 0x00ff0000) < (*(uint32_t *)b & 0x00ff0000));
 }
 
 static int cmp_b(const void *a, const void *b)
 {
-	return (*(uint32_t *)a & 0x0000ff00) < (*(uint32_t *)b & 0x0000ff00) ? -1 : (*(uint32_t *)a  & 0x0000ff00) > (*(uint32_t *)b & 0x0000ff00);
+	return ((*(uint32_t *)a & 0x0000ff00) > (*(uint32_t *)b & 0x0000ff00)) - ((*(uint32_t *)a  & 0x0000ff00) < (*(uint32_t *)b & 0x0000ff00));
 }
 
 /* Get all the unique colors from the image */
 PALETTE afb_unique_colors(uint8_t *img_data, unsigned int img_size)
 {
-    PALETTE pal = afb_palette_init();
-    uint32_t col;
-    bool found;
+    PALETTE pal_w = afb_palette_init();
+    PALETTE pal_f = afb_palette_init();
+    uint32_t prev_color;
     
-    pal.colors = malloc(img_size * sizeof(uint32_t));
+    pal_w.colors = malloc(img_size * sizeof(uint32_t));
+    pal_f.colors = malloc(img_size * sizeof(uint32_t));
 
-    /* Loop through the entire image */
+    /* Copy image data */
     for (int i=0; i < img_size; i++) {
-        col = afb_to_rgba(img_data[i * 3], img_data[i * 3 + 1], img_data[i * 3 + 2], 0);
-        found = false;
-        /* Compare against all other colors in the palette*/
-        for (int j = 0; j < pal.size; j++) {
-            if (col == pal.colors[j]) {
-                found = true;
-                break;
-            }
-        }
-
-        /* Add to the palette if not found*/
-        if(!found) {
-            pal.colors[pal.size] = col;
-            pal.size++;
-        }
+        pal_w.colors[i] = afb_to_rgba(img_data[i * 3], img_data[i * 3 + 1], img_data[i * 3 + 2], 0);
+	    pal_w.size++;
     }
 
-    pal.colors = realloc(pal.colors, pal.size * sizeof(uint32_t));
-    return pal;
+    qsort(pal_w.colors, pal_w.size, sizeof(uint32_t), cmp);
+
+    for (int i=0; i < pal_w.size; i++) {
+        if (i == 0) {
+            pal_f.colors[pal_f.size] = pal_w.colors[i];
+            pal_f.size++;
+            prev_color = pal_w.colors[i];
+            continue;
+        }
+
+        if (prev_color != pal_w.colors[i]) {
+            pal_f.colors[pal_f.size] = pal_w.colors[i];
+            pal_f.size++;
+        }
+        prev_color = pal_w.colors[i];
+    }
+
+    afb_palette_free(&pal_w);
+
+    pal_f.colors = realloc(pal_f.colors, pal_f.size * sizeof(uint32_t));
+    return pal_f;
 }
 
 PALETTE quantize_median_cut(IMAGE img, unsigned int palette_size)

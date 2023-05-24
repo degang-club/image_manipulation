@@ -41,7 +41,7 @@ IMAGE afb_image_init(void);
 void afb_image_free(IMAGE *img);
 AFB_ERROR afb_palette_save(PALETTE *pal, char *path);
 AFB_ERROR afb_image_save(IMAGE *img, char *path);
-AFB_ERROR image_to_pal(IMAGE *img);
+AFB_ERROR image_to_pal(IMAGE *img, PALETTE *pal);
 AFB_ERROR image_to_rgb(IMAGE *img);
 PALETTE afb_palette_init(void);
 void afb_palette_free(PALETTE *pal);
