@@ -5,6 +5,11 @@
 #include <string.h>
 #include "img.h"
 
+static int pow_of_two(int x)
+{
+	return x * x;
+}
+
 IMAGE afb_image_init(void)
 {
 	return (IMAGE){ .image_type = NONE, .width = 0, .height = 0, .image_data = NULL,
@@ -69,9 +74,9 @@ AFB_ERROR image_to_pal(IMAGE *img, PALETTE *pal)
 			blue = img->image_data[i * 3 + 2];
 			
 			for (int y = 0; y < pal->size; y++) {
-				current_squared_distance = pow(red - (uint8_t)afb_rgba_get_r(pal->colors[y]), 2)
-					+ pow(green - (uint8_t)afb_rgba_get_g(pal->colors[y]), 2)
-					+ pow(blue - (uint8_t)afb_rgba_get_b(pal->colors[y]), 2);
+				current_squared_distance = pow_of_two(red - (uint8_t)afb_rgba_get_r(pal->colors[y]))
+					+ pow_of_two(green - (uint8_t)afb_rgba_get_g(pal->colors[y]))
+					+ pow_of_two(blue - (uint8_t)afb_rgba_get_b(pal->colors[y]));
 				if (current_squared_distance < previous_squared_distance)
 				{
 					previous_squared_distance = current_squared_distance;
