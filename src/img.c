@@ -1,4 +1,5 @@
 #include <float.h>
+#include <limits.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,13 +61,13 @@ AFB_ERROR image_to_pal(IMAGE *img, PALETTE *pal)
 	if (img->image_type == TRUECOLOR) {
 		uint8_t *new_image_data = malloc(image_size);
 		int red, green, blue;
-		double current_squared_distance = 0;
-		double previous_squared_distance = DBL_MAX;
+		int current_squared_distance = 0;
+		int previous_squared_distance = INT_MAX;
 		int smallest_distance_index = 0;
 
 		for (unsigned int i=0; i < image_size; i++) {
 			current_squared_distance = 0;
-			previous_squared_distance = DBL_MAX;
+			previous_squared_distance = INT_MAX;
 			smallest_distance_index = 0;
 
 			red = img->image_data[i * 3 + 0];
