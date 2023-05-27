@@ -37,7 +37,7 @@ AFB_ERROR afb_dither_floyd_steinberg(IMAGE *dst, IMAGE *src, PALETTE *pal)
 	// }
 	memcpy(src_img_data, src->image_data, img_size * 3);
 	
-	for (int i=0; i < img_size - (src->width * 2); i++) {
+	for (int i=0; i < img_size; i++) {
 
 		// oldpixel := pixels[x][y]
 		old_px_r = src_img_data[i * 3];
@@ -64,22 +64,46 @@ AFB_ERROR afb_dither_floyd_steinberg(IMAGE *dst, IMAGE *src, PALETTE *pal)
         // pixels[x + 1][y + 1] := pixels[x + 1][y + 1] + quant_error × 1 / 16
 
 		// red
-		src_img_data[(i + 1) * 3] = 					(uint8_t)MAX(MIN(src_img_data[(i + 1) * 3] + ((quant_err_r * 7) / 16), 255), 0);
-		src_img_data[(i - 1 + src->width) * 3] = 		(uint8_t)MAX(MIN(src_img_data[(i - 1 + src->width) * 3] + ((quant_err_r * 3) / 16), 255), 0);
-		src_img_data[(i + src->width) * 3] =			(uint8_t)MAX(MIN(src_img_data[(i + src->width) * 3] + ((quant_err_r * 5) / 16), 255), 0);
-		src_img_data[(i + 1 + src->width) * 3] = 		(uint8_t)MAX(MIN(src_img_data[(i + 1 + src->width) * 3] + ((quant_err_r * 1) / 16), 255), 0);
+		if (i % src->width != src->width - 1) { // check if we're at the end of the image
+			src_img_data[(i + 1) * 3] = 					(uint8_t)MAX(MIN(src_img_data[(i + 1) * 3] + ((quant_err_r * 7) / 16), 255), 0);
+		}
+		if (i + src->width < img_size) {
+			if (i % src->width != 0) {
+				src_img_data[(i - 1 + src->width) * 3] = 		(uint8_t)MAX(MIN(src_img_data[(i - 1 + src->width) * 3] + ((quant_err_r * 3) / 16), 255), 0);
+			}
+			src_img_data[(i + src->width) * 3] =			(uint8_t)MAX(MIN(src_img_data[(i + src->width) * 3] + ((quant_err_r * 5) / 16), 255), 0);
+			if (i % src->width != src->width - 1) {
+				src_img_data[(i + 1 + src->width) * 3] = 		(uint8_t)MAX(MIN(src_img_data[(i + 1 + src->width) * 3] + ((quant_err_r * 1) / 16), 255), 0);
+			}
+		}
 
 		// green
-		src_img_data[(i + 1) * 3 + 1] = 				(uint8_t)MAX(MIN(src_img_data[(i + 1) * 3 + 1] + ((quant_err_g * 7) / 16), 255), 0);
-		src_img_data[(i - 1 + src->width) * 3 + 1] = 	(uint8_t)MAX(MIN(src_img_data[(i - 1 + src->width) * 3 + 1] + ((quant_err_g * 3) / 16), 255), 0);
-		src_img_data[(i + src->width) * 3 + 1] =		(uint8_t)MAX(MIN(src_img_data[(i + src->width) * 3 + 1] + ((quant_err_g * 5) / 16), 255), 0);
-		src_img_data[(i + 1 + src->width) * 3 + 1] = 	(uint8_t)MAX(MIN(src_img_data[(i + 1 + src->width) * 3 + 1] + ((quant_err_g * 1) / 16), 255), 0);
+		if (i % src->width != src->width - 1) {
+			src_img_data[(i + 1) * 3 + 1] = 				(uint8_t)MAX(MIN(src_img_data[(i + 1) * 3 + 1] + ((quant_err_g * 7) / 16), 255), 0);
+		}
+		if (i + src->width < img_size) {
+			if (i % src->width != 0) {
+				src_img_data[(i - 1 + src->width) * 3 + 1] = 	(uint8_t)MAX(MIN(src_img_data[(i - 1 + src->width) * 3 + 1] + ((quant_err_g * 3) / 16), 255), 0);
+			}
+			src_img_data[(i + src->width) * 3 + 1] =		(uint8_t)MAX(MIN(src_img_data[(i + src->width) * 3 + 1] + ((quant_err_g * 5) / 16), 255), 0);
+			if (i % src->width != src->width - 1) {
+				src_img_data[(i + 1 + src->width) * 3 + 1] = 	(uint8_t)MAX(MIN(src_img_data[(i + 1 + src->width) * 3 + 1] + ((quant_err_g * 1) / 16), 255), 0);
+			}
+		}
 
 		// blue
-		src_img_data[(i + 1) * 3 + 2] = 				(uint8_t)MAX(MIN(src_img_data[(i + 1) * 3 + 2] + ((quant_err_b * 7) / 16), 255), 0);
-		src_img_data[(i - 1 + src->width) * 3 + 2] = 	(uint8_t)MAX(MIN(src_img_data[(i - 1 + src->width) * 3 + 2] + ((quant_err_b * 3) / 16), 255), 0);
-		src_img_data[(i + src->width) * 3 + 2] =		(uint8_t)MAX(MIN(src_img_data[(i + src->width) * 3 + 2] + ((quant_err_b * 5) / 16), 255), 0);
-		src_img_data[(i + 1 + src->width) * 3 + 2] = 	(uint8_t)MAX(MIN(src_img_data[(i + 1 + src->width) * 3 + 2] + ((quant_err_b * 1) / 16), 255), 0);
+		if (i % src->width != src->width - 1) {
+			src_img_data[(i + 1) * 3 + 2] = 				(uint8_t)MAX(MIN(src_img_data[(i + 1) * 3 + 2] + ((quant_err_b * 7) / 16), 255), 0);
+		}
+		if (i + src->width < img_size) {
+			if (i % src->width != 0) {
+				src_img_data[(i - 1 + src->width) * 3 + 2] = 	(uint8_t)MAX(MIN(src_img_data[(i - 1 + src->width) * 3 + 2] + ((quant_err_b * 3) / 16), 255), 0);
+			}
+			src_img_data[(i + src->width) * 3 + 2] =		(uint8_t)MAX(MIN(src_img_data[(i + src->width) * 3 + 2] + ((quant_err_b * 5) / 16), 255), 0);
+			if (i % src->width != src->width - 1) {
+				src_img_data[(i + 1 + src->width) * 3 + 2] = 	(uint8_t)MAX(MIN(src_img_data[(i + 1 + src->width) * 3 + 2] + ((quant_err_b * 1) / 16), 255), 0);
+			}
+		}
 	}
 	
 	free(src_img_data);
