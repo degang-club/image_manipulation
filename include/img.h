@@ -36,6 +36,7 @@ typedef struct {
 #define afb_rgba_get_b(c) ((c >> 8) & 0xff)
 #define afb_rgba_get_a(c) (c & 0xff)
 #define afb_to_rgba(r,g,b,a) ((r << 24) + (g << 16) + (b << 8) + a)
+#define afb_xy_to_1d(x, y, width) ((y * width) + x)
 
 IMAGE afb_image_init(void);
 void afb_image_free(IMAGE *img);
@@ -45,5 +46,7 @@ AFB_ERROR image_to_pal(IMAGE *img, PALETTE *pal);
 AFB_ERROR image_to_rgb(IMAGE *img);
 PALETTE afb_palette_init(void);
 void afb_palette_free(PALETTE *pal);
+
+unsigned int afb_closest_color(int red, int green, int blue, PALETTE *pal);
 
 #endif

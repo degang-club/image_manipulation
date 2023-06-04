@@ -26,6 +26,25 @@ void afb_image_free(IMAGE *img)
 		free(img->palette.colors);
 }
 
+unsigned int afb_closest_color(int red, int green, int blue, PALETTE *pal) 
+{
+	int current_squared_distance = 0;
+	int previous_squared_distance = INT_MAX;
+	int smallest_distance_index = 0;
+
+	for (int y = 0; y < pal->size; y++) {
+		current_squared_distance = pow_of_two(red - (uint8_t)afb_rgba_get_r(pal->colors[y]))
+			+ pow_of_two(green - (uint8_t)afb_rgba_get_g(pal->colors[y]))
+			+ pow_of_two(blue - (uint8_t)afb_rgba_get_b(pal->colors[y]));
+		if (current_squared_distance < previous_squared_distance)
+		{
+			previous_squared_distance = current_squared_distance;
+			smallest_distance_index = y;
+		}
+	}
+	return smallest_distance_index;
+}
+
 AFB_ERROR image_to_rgb(IMAGE *img)
 {
 	if(img->image_type == TRUECOLOR) return AFB_E_WRONG_TYPE;
