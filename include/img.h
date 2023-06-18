@@ -48,5 +48,6 @@ PALETTE afb_palette_init(void);
 void afb_palette_free(PALETTE *pal);
 
 unsigned int afb_closest_color(int red, int green, int blue, PALETTE *pal);
+IMAGE afb_copy_image(IMAGE *img);
 
 #endif

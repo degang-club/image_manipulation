@@ -45,6 +45,35 @@ unsigned int afb_closest_color(int red, int green, int blue, PALETTE *pal)
 	return smallest_distance_index;
 }
 
+IMAGE afb_copy_image(IMAGE* img)
+{
+	IMAGE img_copy = afb_image_init();
+	unsigned int img_data_size;
+	unsigned int pal_colors_size;
+	
+	img_copy.image_type = img->image_type;
+	img_copy.width = img->width;
+	img_copy.height = img->height;
+	
+	if (img->image_type == TRUECOLOR)
+		img_data_size = img->width * img->height * 3;
+	else
+		img_data_size = img->width * img->height;
+	
+	img_copy.image_data = malloc(img_data_size);
+	memcpy(img_copy.image_data, img->image_data, img_data_size);
+	
+	if (img->image_type == PALETTED) {
+		img_copy.palette.size = img->palette.size;
+		pal_colors_size = img->palette.size * sizeof(uint32_t);
+		
+		img_copy.palette.colors = malloc(pal_colors_size);
+		memcpy(img_copy.palette.colors, img->palette.colors, pal_colors_size);
+	}
+	
+	return img_copy;
+}
+
 AFB_ERROR image_to_rgb(IMAGE *img)
 {
 	if(img->image_type == TRUECOLOR) return AFB_E_WRONG_TYPE;
