@@ -27,7 +27,7 @@ typedef enum {
 typedef struct {
 	uint64_t size;
 	uint32_t *colors;
-} PALETTE;
+} AFB_PALETTE;
 
 typedef struct {
 	IMAGE_TYPE image_type;
@@ -35,22 +35,22 @@ typedef struct {
 	uint32_t height;
 	uint8_t *image_data;
 
-	PALETTE palette;
-} IMAGE;
+	AFB_PALETTE palette;
+} AFB_IMAGE;
 
-IMAGE afb_image_init(void);
-void afb_image_free(IMAGE *img);
+AFB_IMAGE afb_image_init(void);
+void afb_image_free(AFB_IMAGE *img);
 
-AFB_ERROR afb_palette_save(PALETTE *pal, char *path);
-AFB_ERROR afb_image_save(IMAGE *img, char *path);
+AFB_ERROR afb_palette_save(AFB_PALETTE *pal, char *path);
+AFB_ERROR afb_image_save(AFB_IMAGE *img, char *path);
 
-AFB_ERROR image_to_pal(IMAGE *img, PALETTE * pal);
-AFB_ERROR image_to_rgb(IMAGE *img);
+AFB_ERROR image_to_pal(AFB_IMAGE *img, AFB_PALETTE * pal);
+AFB_ERROR image_to_rgb(AFB_IMAGE *img);
 
-PALETTE afb_palette_init(void);
-void afb_palette_free(PALETTE *pal);
+AFB_PALETTE afb_palette_init(void);
+void afb_palette_free(AFB_PALETTE *pal);
 
-unsigned int afb_closest_color(int red, int green, int blue, PALETTE *pal);
-IMAGE afb_copy_image(IMAGE *img);
+unsigned int afb_closest_color(int red, int green, int blue, AFB_PALETTE *pal);
+AFB_IMAGE afb_copy_image(AFB_IMAGE *img);
 
 #endif

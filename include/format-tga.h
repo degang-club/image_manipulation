@@ -14,6 +14,6 @@
 #define TGA_IMG_RUNLENGTH_TRUECOLOR 10
 #define TGA_IMG_RUNLENGTH_BLACKWHITE 11
 
-AFB_ERROR tga_load_file(IMAGE *img, char *path);
+AFB_ERROR afb_format_tga_load(AFB_IMAGE *img, char *path);
 
 #endif

@@ -2,20 +2,22 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "img.h"
-#include "tga.h"
+#include "format-tga.h"
 #include "scale.h"
 
 int main(void)
 {
-	IMAGE img_rgb = afb_image_init();
-	IMAGE img_pal = afb_image_init();
+	AFB_IMAGE img_rgb = afb_image_init();
+	AFB_IMAGE img_pal = afb_image_init();
 
-	if (tga_load_file(&img_rgb, "test_images/TGA/kodim23/kodim23_rgb_no-rle_top-left.tga") != AFB_E_SUCCESS) {
+	if (afb_format_tga_load
+	    (&img_rgb, "test_images/TGA/kodim23/kodim23_rgb_no-rle_top-left.tga") != AFB_E_SUCCESS) {
 		printf("Could not load image\n");
 		return 1;
 	}
 	
-	if (tga_load_file(&img_pal, "test_images/TGA/kodim23/kodim23_pal_no-rle_top_left.tga") != AFB_E_SUCCESS) {
+	if (afb_format_tga_load
+	    (&img_pal, "test_images/TGA/kodim23/kodim23_pal_no-rle_top_left.tga") != AFB_E_SUCCESS) {
 		printf("Could not load image\n");
 		return 1;
 	}

@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "scale.h"
 
-static AFB_ERROR nearest_neighbor_rgb(IMAGE *img, uint32_t w, uint32_t h)
+static AFB_ERROR nearest_neighbor_rgb(AFB_IMAGE *img, uint32_t w, uint32_t h)
 {
 	unsigned int x_ratio = ((img->width << 16) / w);
 	unsigned int y_ratio = ((img->height << 16) / h);
@@ -29,7 +29,7 @@ static AFB_ERROR nearest_neighbor_rgb(IMAGE *img, uint32_t w, uint32_t h)
 	return AFB_E_SUCCESS;
 }
 
-static AFB_ERROR nearest_neighbor_pal(IMAGE *img, uint32_t w, uint32_t h)
+static AFB_ERROR nearest_neighbor_pal(AFB_IMAGE *img, uint32_t w, uint32_t h)
 {
 	unsigned int x_ratio = ((img->width << 16) / w);
 	unsigned int y_ratio = ((img->height << 16) / h);
@@ -53,7 +53,7 @@ static AFB_ERROR nearest_neighbor_pal(IMAGE *img, uint32_t w, uint32_t h)
 	return AFB_E_SUCCESS;
 }
 
-AFB_ERROR afb_scale_nearest_neighbor(IMAGE *img, uint32_t w, uint32_t h)
+AFB_ERROR afb_scale_nearest_neighbor(AFB_IMAGE *img, uint32_t w, uint32_t h)
 {
 	switch (img->image_type) {
 	case TRUECOLOR:

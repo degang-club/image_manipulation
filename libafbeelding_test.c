@@ -4,7 +4,7 @@
 
 int main()
 {
-	IMAGE img = afb_image_init();
+	AFB_IMAGE img = afb_image_init();
 
 //  59K kodim23_gray_no-rle_bottom-left.tga
 //  59K kodim23_gray_no-rle_top-left.tga

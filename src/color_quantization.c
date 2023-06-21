@@ -13,6 +13,12 @@
 #define GREEN 1
 #define BLUE 2
 
+typedef struct {
+	AFB_PALETTE palette;
+	uint8_t ranges[3];
+	uint8_t largest_channel;
+} BUCKET;
+
 static int cmp(const void *a, const void *b)
 {
 	return ((*(uint32_t *) a > *(uint32_t *) b) - (*(uint32_t *) a <
@@ -40,11 +46,68 @@ static int cmp_b(const void *a, const void *b)
 	                                           (*(uint32_t *) b & 0x0000ff00));
 }
 
-/* Get all the unique colors from the image */
-PALETTE afb_unique_colors(uint8_t *img_data, unsigned int img_size)
+static void sort_colors_channel(BUCKET *bucket)
 {
-	PALETTE pal_w = afb_palette_init();
-	PALETTE pal_f = afb_palette_init();
+	uint16_t minR = 255;
+	uint16_t maxR = 0;
+	uint16_t minG = 255;
+	uint16_t maxG = 0;
+	uint16_t minB = 255;
+	uint16_t maxB = 0;
+
+	/* Go through all the values in a bucket and find the smallest and the
+	 *	   biggest value for each channel */
+	for (size_t i = 0; i < bucket->palette.size; i++) {
+		minR =
+		afb_rgba_get_r(bucket->palette.colors[i]) <
+		minR ? afb_rgba_get_r(bucket->palette.colors[i]) : minR;
+		maxR =
+		afb_rgba_get_r(bucket->palette.colors[i]) >
+		maxR ? afb_rgba_get_r(bucket->palette.colors[i]) : maxR;
+
+		minG =
+		afb_rgba_get_g(bucket->palette.colors[i]) <
+		minG ? afb_rgba_get_g(bucket->palette.colors[i]) : minG;
+		maxG =
+		afb_rgba_get_g(bucket->palette.colors[i]) >
+		maxG ? afb_rgba_get_g(bucket->palette.colors[i]) : maxG;
+
+		minB =
+		afb_rgba_get_b(bucket->palette.colors[i]) <
+		minB ? afb_rgba_get_b(bucket->palette.colors[i]) : minB;
+		maxB =
+		afb_rgba_get_b(bucket->palette.colors[i]) >
+		maxB ? afb_rgba_get_b(bucket->palette.colors[i]) : maxB;
+	}
+
+	/* Calculate ranges between the smallest and biggest value of each channel
+	 */
+	int r_range = bucket->ranges[RED] = maxR - minR;
+	int g_range = bucket->ranges[GREEN] = maxG - minG;
+	int b_range = bucket->ranges[BLUE] = maxB - minB;
+
+	/* Find which channel has the biggest range */
+	int (*sort_function)() = cmp_r;
+	bucket->largest_channel = RED;
+	if (g_range >= r_range && g_range >= b_range) {
+		sort_function = cmp_g;
+		bucket->largest_channel = GREEN;
+	}
+	if (b_range >= r_range && b_range >= g_range) {
+		sort_function = cmp_b;
+		bucket->largest_channel = BLUE;
+	}
+
+	/* Sort the bucket */
+	qsort(bucket->palette.colors, bucket->palette.size, sizeof(uint32_t),
+		  sort_function);
+}
+
+/* Get all the unique colors from the image */
+AFB_PALETTE afb_unique_colors(uint8_t *img_data, unsigned int img_size)
+{
+	AFB_PALETTE pal_w = afb_palette_init();
+	AFB_PALETTE pal_f = afb_palette_init();
 	uint32_t prev_color;
 
 	pal_w.colors = malloc(img_size * sizeof(uint32_t));
@@ -81,7 +144,7 @@ PALETTE afb_unique_colors(uint8_t *img_data, unsigned int img_size)
 	return pal_f;
 }
 
-PALETTE quantize_median_cut(IMAGE img, unsigned int palette_size)
+AFB_PALETTE quantize_median_cut(AFB_IMAGE img, unsigned int palette_size)
 {
 	unsigned int img_size = img.height * img.width;
 	unsigned int total_buckets = 1;
@@ -90,8 +153,8 @@ PALETTE quantize_median_cut(IMAGE img, unsigned int palette_size)
 	unsigned int r_avg, g_avg, b_avg;
 	uint8_t largest_channel;
 	BUCKET **bucket_list;
-	PALETTE pal_w = afb_unique_colors(img.image_data, img_size);    // working palette
-	PALETTE pal_f = afb_palette_init(); // final palette
+	AFB_PALETTE pal_w = afb_unique_colors(img.image_data, img_size);    // working palette
+	AFB_PALETTE pal_f = afb_palette_init(); // final palette
 
 	// TODO sizeof(*bucket_list) can probably be changed to sizeof(*BUCKET) for clarity
 	/* Create a list of buckets with a size of our desired palette */
@@ -180,59 +243,3 @@ PALETTE quantize_median_cut(IMAGE img, unsigned int palette_size)
 	return pal_f;
 }
 
-void sort_colors_channel(BUCKET *bucket)
-{
-	uint16_t minR = 255;
-	uint16_t maxR = 0;
-	uint16_t minG = 255;
-	uint16_t maxG = 0;
-	uint16_t minB = 255;
-	uint16_t maxB = 0;
-
-	/* Go through all the values in a bucket and find the smallest and the
-	   biggest value for each channel */
-	for (size_t i = 0; i < bucket->palette.size; i++) {
-		minR =
-		    afb_rgba_get_r(bucket->palette.colors[i]) <
-		    minR ? afb_rgba_get_r(bucket->palette.colors[i]) : minR;
-		maxR =
-		    afb_rgba_get_r(bucket->palette.colors[i]) >
-		    maxR ? afb_rgba_get_r(bucket->palette.colors[i]) : maxR;
-
-		minG =
-		    afb_rgba_get_g(bucket->palette.colors[i]) <
-		    minG ? afb_rgba_get_g(bucket->palette.colors[i]) : minG;
-		maxG =
-		    afb_rgba_get_g(bucket->palette.colors[i]) >
-		    maxG ? afb_rgba_get_g(bucket->palette.colors[i]) : maxG;
-
-		minB =
-		    afb_rgba_get_b(bucket->palette.colors[i]) <
-		    minB ? afb_rgba_get_b(bucket->palette.colors[i]) : minB;
-		maxB =
-		    afb_rgba_get_b(bucket->palette.colors[i]) >
-		    maxB ? afb_rgba_get_b(bucket->palette.colors[i]) : maxB;
-	}
-
-	/* Calculate ranges between the smallest and biggest value of each channel
-	 */
-	int r_range = bucket->ranges[RED] = maxR - minR;
-	int g_range = bucket->ranges[GREEN] = maxG - minG;
-	int b_range = bucket->ranges[BLUE] = maxB - minB;
-
-	/* Find which channel has the biggest range */
-	int (*sort_function)() = cmp_r;
-	bucket->largest_channel = RED;
-	if (g_range >= r_range && g_range >= b_range) {
-		sort_function = cmp_g;
-		bucket->largest_channel = GREEN;
-	}
-	if (b_range >= r_range && b_range >= g_range) {
-		sort_function = cmp_b;
-		bucket->largest_channel = BLUE;
-	}
-
-	/* Sort the bucket */
-	qsort(bucket->palette.colors, bucket->palette.size, sizeof(uint32_t),
-	      sort_function);
-}

@@ -5,7 +5,8 @@
 #include "img.h"
 #include "dither.h"
 
-AFB_ERROR afb_dither_floyd_steinberg(IMAGE *dst, IMAGE *src, PALETTE *pal)
+AFB_ERROR afb_dither_floyd_steinberg(AFB_IMAGE *dst, AFB_IMAGE *src, 
+                                     AFB_PALETTE *pal)
 {
 	if (src->image_type != TRUECOLOR)
 		return AFB_E_WRONG_TYPE;

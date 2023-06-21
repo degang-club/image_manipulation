@@ -3,7 +3,13 @@ PREFIX=/usr/local
 CC=gcc
 CFLAGS=-g -static -std=c99 -Wall -pedantic -Iinclude/ -lm
 LDFLAGS=-L/usr/lib
-OBJS=src/color_quantization.o src/dither.o src/scale.o src/tga.o src/img.o
+
+OBJS= \
+	src/color_quantization.o \
+	src/dither.o \
+	src/format-tga.o \
+	src/img.o \
+	src/scale.o \
 
 all: libafbeelding.a 
 

@@ -11,14 +11,14 @@ static int pow_of_two(int x)
 	return x * x;
 }
 
-IMAGE afb_image_init(void)
+AFB_IMAGE afb_image_init(void)
 {
-	return (IMAGE) {
+	return (AFB_IMAGE) {
 	.image_type = NONE,.width = 0,.height = 0,.image_data =
 	        NULL,.palette.size = 0,.palette.colors = NULL};
 }
 
-void afb_image_free(IMAGE *img)
+void afb_image_free(AFB_IMAGE *img)
 {
 	if (img->image_data != NULL)
 		free(img->image_data);
@@ -27,7 +27,7 @@ void afb_image_free(IMAGE *img)
 		free(img->palette.colors);
 }
 
-unsigned int afb_closest_color(int red, int green, int blue, PALETTE *pal)
+unsigned int afb_closest_color(int red, int green, int blue, AFB_PALETTE *pal)
 {
 	int current_squared_distance = 0;
 	int previous_squared_distance = INT_MAX;
@@ -46,9 +46,9 @@ unsigned int afb_closest_color(int red, int green, int blue, PALETTE *pal)
 	return smallest_distance_index;
 }
 
-IMAGE afb_copy_image(IMAGE *img)
+AFB_IMAGE afb_copy_image(AFB_IMAGE *img)
 {
-	IMAGE img_copy = afb_image_init();
+	AFB_IMAGE img_copy = afb_image_init();
 	unsigned int img_data_size;
 	unsigned int pal_colors_size;
 
@@ -75,7 +75,7 @@ IMAGE afb_copy_image(IMAGE *img)
 	return img_copy;
 }
 
-AFB_ERROR image_to_rgb(IMAGE *img)
+AFB_ERROR image_to_rgb(AFB_IMAGE *img)
 {
 	if (img->image_type == TRUECOLOR)
 		return AFB_E_WRONG_TYPE;
@@ -105,7 +105,7 @@ AFB_ERROR image_to_rgb(IMAGE *img)
 	return AFB_E_SUCCESS;
 }
 
-AFB_ERROR image_to_pal(IMAGE *img, PALETTE *pal)
+AFB_ERROR image_to_pal(AFB_IMAGE *img, AFB_PALETTE *pal)
 {
 	if (img->image_type == PALETTED)
 		return AFB_E_WRONG_TYPE;
@@ -161,14 +161,14 @@ AFB_ERROR image_to_pal(IMAGE *img, PALETTE *pal)
 	return AFB_E_SUCCESS;
 }
 
-AFB_ERROR image_to_gray(IMAGE *img)
+AFB_ERROR image_to_gray(AFB_IMAGE *img)
 {
 	if (img->image_type == GRAYSCALE)
 		return AFB_E_WRONG_TYPE;
 	return AFB_E_SUCCESS;
 }
 
-AFB_ERROR afb_palette_save(PALETTE *pal, char *path)
+AFB_ERROR afb_palette_save(AFB_PALETTE *pal, char *path)
 {
 	FILE *f = fopen(path, "w");
 	uint8_t r, g, b;
@@ -195,7 +195,7 @@ AFB_ERROR afb_palette_save(PALETTE *pal, char *path)
 	return AFB_E_SUCCESS;
 }
 
-AFB_ERROR afb_image_save(IMAGE *img, char *path)
+AFB_ERROR afb_image_save(AFB_IMAGE *img, char *path)
 {
 	int img_size;
 	uint8_t r, g, b;
@@ -231,13 +231,13 @@ AFB_ERROR afb_image_save(IMAGE *img, char *path)
 	return AFB_E_SUCCESS;
 }
 
-PALETTE afb_palette_init(void)
+AFB_PALETTE afb_palette_init(void)
 {
-	return (PALETTE) {
+	return (AFB_PALETTE) {
 	.size = 0,.colors = NULL};
 }
 
-void afb_palette_free(PALETTE *pal)
+void afb_palette_free(AFB_PALETTE *pal)
 {
 	free(pal->colors);
 }

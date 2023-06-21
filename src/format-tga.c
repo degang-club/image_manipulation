@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "img.h"
-#include "tga.h"
+#include "format-tga.h"
 
-AFB_ERROR tga_load_file(IMAGE *img, char *path)
+AFB_ERROR afb_format_tga_load(AFB_IMAGE *img, char *path)
 {
 	FILE *f_tga;
 	uint32_t image_size;
