@@ -14,11 +14,14 @@ int main(void)
 		printf("Could not load image\n");
 		return 1;
 	}
-	AFB_IMAGE dst_img = afb_image_init();
+	AFB_IMAGE dst_img_floydsteinberg = afb_image_init();
+	AFB_IMAGE dst_img_atkinson = afb_image_init();
 	
-	AFB_PALETTE pal = quantize_median_cut(src_img, 256);
-	afb_dither_floyd_steinberg(&dst_img, &src_img, &pal);
+	AFB_PALETTE pal = afb_quantize_median_cut(src_img, 64);
+	afb_dither_floyd_steinberg(&dst_img_floydsteinberg, &src_img, &pal);
+	afb_dither_atkinson(&dst_img_atkinson, &src_img, &pal);
 
-	afb_image_save(&dst_img, "test_output_dither.afb");
+	afb_image_save(&dst_img_floydsteinberg, "test_output_dither_floydsteinberg.afb");
+	afb_image_save(&dst_img_atkinson, "test_output_dither_atkinson.afb");
     return 0;
 }

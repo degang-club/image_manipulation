@@ -144,7 +144,7 @@ AFB_PALETTE afb_unique_colors(uint8_t *img_data, unsigned int img_size)
 	return pal_f;
 }
 
-AFB_PALETTE quantize_median_cut(AFB_IMAGE img, unsigned int palette_size)
+AFB_PALETTE afb_quantize_median_cut(AFB_IMAGE img, unsigned int palette_size)
 {
 	unsigned int img_size = img.height * img.width;
 	unsigned int total_buckets = 1;
