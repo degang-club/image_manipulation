@@ -3,9 +3,9 @@
 #include "img.h"
 
 typedef struct {
-    PALETTE palette;
-    uint8_t ranges[3];
-    uint8_t largest_channel;
+	PALETTE palette;
+	uint8_t ranges[3];
+	uint8_t largest_channel;
 } BUCKET;
 
 void sort_colors_channel(BUCKET *bucket);
