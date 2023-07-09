@@ -14,6 +14,7 @@
 typedef enum {
 	AFB_E_SUCCESS,
 	AFB_E_FILE_ERROR,
+	AFB_E_INVALID_FILE,
 	AFB_E_WRONG_TYPE,
 } AFB_ERROR;
 
@@ -22,6 +23,7 @@ typedef enum {
 	PALETTED,
 	GRAYSCALE,
 	TRUECOLOR,
+	TRUECOLOR_ALPHA,
 } IMAGE_TYPE;
 
 typedef struct {
