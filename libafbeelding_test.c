@@ -48,20 +48,6 @@ int main()
 	char *file_name;
 	char *extension_start;
 
-//  59K kodim23_gray_no-rle_bottom-left.tga
-//  59K kodim23_gray_no-rle_top-left.tga
-//  62K kodim23_gray_rle_bottom-left.tga
-//  62K kodim23_gray_rle_top-left.tga
-//  60K kodim23_pal_no-rle_bottom_left.tga
-//  60K kodim23_pal_no-rle_top_left.tga
-//  44K kodim23_pal_rle_bottom_left.tga
-//  44K kodim23_pal_rle_top_left.tga
-// 176K kodim23_rgb_no-rle_bottom_left.tga
-//  37K kodim23_rgb_no-rle_top-left_128_96.tga
-// 176K kodim23_rgb_no-rle_top-left.tga
-// 175K kodim23_rgb_rle_bottom-left.tga
-// 175K kodim23_rgb_rle_top-left.tga
-
 	char *dir_path = "./test_images/TGA/kodim23/";
 	char *new_file_name;
 

@@ -17,7 +17,7 @@
 AFB_ERROR afb_format_tga_load(AFB_IMAGE *img, char *path)
 {
 	FILE *f_tga;
-	uint8_t red, green, blue;
+	uint8_t red, green, blue, alpha;
 	uint8_t order_rl;			// Order Right to Left
 	uint8_t order_tb;			// Order Top to Bottom
 	unsigned int read_bytes = 0;
@@ -101,7 +101,7 @@ AFB_ERROR afb_format_tga_load(AFB_IMAGE *img, char *path)
 			fread(&blue, 1, 1, f_tga);  // Blue
 			fread(&green, 1, 1, f_tga); // Green
 			fread(&red, 1, 1, f_tga);   // Red
-			img->palette.colors[i] = afb_to_rgba(red, green, blue, 0);
+			img->palette.colors[i] = afb_to_rgba(red, green, blue, 0xff);
 		}
 	}
 
@@ -155,6 +155,114 @@ AFB_ERROR afb_format_tga_load(AFB_IMAGE *img, char *path)
 			for (int x = (order_rl ? img->width : 0);
 					(order_rl ? x != 0 : x < img->width); order_rl ? x-- : x++) {
 				fread(&img->image_data[afb_xy_to_1d(x, y, img->width)], 1, 1, f_tga);
+			}
+		}
+	} else if (imageType == TGA_IMG_RUNLENGTH_TRUECOLOR) {
+		unsigned int i = 0;
+		uint8_t img_packet_header;
+		uint64_t image_size = (width * height);
+
+		if (pixelSize == 24)
+			image_size *= 3;
+		else if (pixelSize == 32)
+			image_size *= 4;
+
+		while (i < image_size) {
+			/* Read packet header and pixel data */
+			fread(&img_packet_header, sizeof(img_packet_header), 1, f_tga);
+
+			if ((img_packet_header >> 7) & 0x1) { /* Check if RLE packet */
+				fread(&blue, sizeof(blue), 1, f_tga);
+				fread(&green, sizeof(green), 1, f_tga);
+				fread(&red, sizeof(red), 1, f_tga);
+				if (pixelSize == 32)
+					fread(&alpha, sizeof(alpha), 1, f_tga);
+
+				/* Repeat pixel */
+				for (int x = 0; x != (img_packet_header & 0x7f) + 1; x++) {
+					img->image_data[i++] = red;
+					img->image_data[i++] = green;
+					img->image_data[i++] = blue;
+					if (pixelSize == 32)
+						img->image_data[i++] = alpha;
+				}
+			} else { /* Raw packet */
+				/* Read pixels */
+				for (int x = 0; x != (img_packet_header & 0x7f) + 1; x++) {
+					fread(&blue, sizeof(blue), 1, f_tga);
+					fread(&green, sizeof(green), 1, f_tga);
+					fread(&red, sizeof(red), 1, f_tga);
+					if (pixelSize == 32)
+						fread(&alpha, sizeof(alpha), 1, f_tga);
+
+					img->image_data[i++] = red;
+					img->image_data[i++] = green;
+					img->image_data[i++] = blue;
+					if (pixelSize == 32)
+						img->image_data[i++] = alpha;
+				}
+			}
+		}
+		
+		/* Flip image horizontally */
+		if (!order_tb) {
+			for (unsigned int y = 0; y < img->height / 2; y++) {
+				for (unsigned int x = 0; x < img->width; x++) {
+					red = img->image_data[afb_xy_to_1d(x, y, width) * 3];
+					green = img->image_data[afb_xy_to_1d(x, y, width) * 3 + 1];
+					blue = img->image_data[afb_xy_to_1d(x, y, width) * 3 + 2];
+
+					img->image_data[afb_xy_to_1d(x, y, width) * 3] = img->image_data[
+						afb_xy_to_1d(x, (height - y - 1), width) * 3];
+					img->image_data[afb_xy_to_1d(x, y, width) * 3 + 1] = img->image_data[
+						afb_xy_to_1d(x, (height - y - 1), width) * 3 + 1];
+					img->image_data[afb_xy_to_1d(x, y, width) * 3 + 2] = img->image_data[
+						afb_xy_to_1d(x, (height - y - 1), width) * 3 + 2];
+
+					img->image_data[
+						afb_xy_to_1d(x, (height - y - 1), width) * 3] = red;
+					img->image_data[
+						afb_xy_to_1d(x, (height - y - 1), width) * 3 + 1] = green;
+					img->image_data[
+						afb_xy_to_1d(x, (height - y - 1), width) * 3 + 2] = blue;
+				}
+			}
+		}
+	} else if (imageType == TGA_IMG_RUNLENGTH_COLORMAPPED || imageType == TGA_IMG_RUNLENGTH_BLACKWHITE) {
+		unsigned int i = 0;
+		uint8_t img_packet_header;
+		uint8_t pixel;
+		while (i < (width * height)) {
+			/* Read packet header and pixel data */
+			fread(&img_packet_header, sizeof(img_packet_header), 1, f_tga);
+
+			if ((img_packet_header >> 7) & 0x1) { /* Check if RLE packet */
+				fread(&pixel, sizeof(pixel), 1, f_tga);
+				/* Repeat pixel */
+				for (int x = 0; x != (img_packet_header & 0x7f) + 1; x++) {
+					img->image_data[i] = pixel;
+					i++;
+				}
+			} else { /* Raw packet */
+				/* Read pixels */
+				for (int x = 0; x != (img_packet_header & 0x7f) + 1; x++) {
+					fread(&pixel, sizeof(pixel), 1, f_tga);
+					img->image_data[i] = pixel;
+					i++;
+				}
+			}
+		}
+
+		/* Flip image horizontally */
+		if (!order_tb) {
+			for (unsigned int y = 0; y < img->height / 2; y++) {
+				for (unsigned int x = 0; x < img->width; x++) {
+					pixel = img->image_data[afb_xy_to_1d(x, y, width)];
+					img->image_data[afb_xy_to_1d(x, y, width)] = img->image_data[
+						afb_xy_to_1d(x, (height - y - 1), width)];
+					img->image_data[
+						afb_xy_to_1d(x, (height - y - 1), width)] = pixel;
+				}
 			}
 		}
 	}

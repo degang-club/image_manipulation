@@ -1,7 +1,7 @@
 PREFIX=/usr/local
 
 CC=gcc
-CFLAGS=-g -static -std=c99 -Wall -pedantic -Iinclude/ -lm
+CFLAGS=-g -static -std=c99 -Wall -Wextra -pedantic -Iinclude/ -lm -pg
 LDFLAGS=-L/usr/lib
 
 OBJS= \
