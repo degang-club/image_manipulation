@@ -14,9 +14,9 @@ int main(void)
 		return 1;
 	}
 	
-	AFB_PALETTE pal = quantize_median_cut(img, 256);
+	AFB_PALETTE pal = afb_quantize_median_cut(img, 256);
 	image_to_pal(&img, &pal);
-	printf("%d", afb_image_save(&img, "test_output.afb"));
+	afb_image_save(&img, "test_output.afb");
 	afb_palette_save(&pal, "test_output_palette.afb");
     return 0;
 }

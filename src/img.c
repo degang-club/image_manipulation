@@ -1,6 +1,7 @@
 #include <float.h>
 #include <limits.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -105,43 +106,212 @@ AFB_ERROR image_to_rgb(AFB_IMAGE *img)
 	return AFB_E_SUCCESS;
 }
 
+struct kd_node {
+	uint64_t index;
+	uint8_t red;
+	uint8_t green;
+	uint8_t blue;
+	struct kd_node *left;
+	struct kd_node *right;
+};
+
+struct color {
+	unsigned int index;
+	uint8_t red;
+	uint8_t green;
+	uint8_t blue;
+};
+
+static int cmp_r(const void *a, const void *b)
+{
+	return ((*(struct color *) a).red >
+	        (*(struct color *) b).red) - ((*(struct color *) a).red <
+	                                      (*(struct color *) b).red);
+}
+
+static int cmp_g(const void *a, const void *b)
+{
+	return ((*(struct color *) a).green >
+	        (*(struct color *) b).green) - ((*(struct color *) a).green <
+	                                        (*(struct color *) b).green);
+}
+
+static int cmp_b(const void *a, const void *b)
+{
+	return ((*(struct color *) a).blue >
+	        (*(struct color *) b).blue) - ((*(struct color *) a).blue <
+	                                       (*(struct color *) b).blue);
+}
+
+struct kd_node * construct_kd_node_recursive(struct color *colors,
+									uint64_t size, unsigned int depth)
+{
+	if(size <= 0) return NULL;
+
+	struct kd_node *parent_node = malloc(sizeof(struct kd_node));
+
+	unsigned int size_left = size / 2;
+	unsigned int size_right = size - 1 - size_left;
+
+	int (*sort_function)();
+	switch(depth % 3) { // Depth determines compare axis
+		case 0: sort_function = cmp_r; break;
+		case 1: sort_function = cmp_g; break;
+		case 2: sort_function = cmp_b; break;
+	}
+
+	qsort(colors, size, sizeof(struct color), sort_function);
+
+	// Assign values of the median point
+	parent_node->index = colors[size_left].index;
+	parent_node->red = colors[size_left].red;
+	parent_node->green = colors[size_left].green;
+	parent_node->blue = colors[size_left].blue;
+
+	// Recurse with both sides of the array
+	parent_node->left = construct_kd_node_recursive(colors, size_left,
+									depth + 1);
+	parent_node->right = construct_kd_node_recursive(&colors[size_left + 1],
+									size_right, depth + 1);
+
+	return parent_node;
+}
+
+struct kd_node * construct_kd_tree_from_pal(AFB_PALETTE *pal)
+{
+	struct kd_node *root_node;
+	struct color *colors = malloc(sizeof(struct color) * pal->size);
+
+	// Create array with colors and their indices
+	for (unsigned int i=0; i < pal->size; i++) {
+		colors[i] = (struct color){
+			.index = i,
+			.red = (uint8_t)afb_rgba_get_r(pal->colors[i]),
+			.green = (uint8_t)afb_rgba_get_g(pal->colors[i]),
+			.blue = (uint8_t)afb_rgba_get_b(pal->colors[i]),
+		};
+	}
+
+	root_node = construct_kd_node_recursive(colors, pal->size, 0);
+	free(colors);
+
+	return root_node;
+}
+
+void traverse_kd_tree(struct kd_node *root_node,
+	struct kd_node **current_best,
+	unsigned int *best_distance,
+	uint8_t red, uint8_t green, uint8_t blue,
+	unsigned int depth)
+{
+	bool side;
+	switch(depth % 3) { // Depth determines split axis
+		case 0: side = red > root_node->red; break;
+		case 1: side = green > root_node->green; break;
+		case 2: side = blue > root_node->blue; break;
+	}
+
+	bool is_leaf = root_node->right == NULL && root_node->left == NULL;
+
+	struct kd_node *selected = side ? root_node->right : root_node->left;
+
+	if(is_leaf) {
+		// Calculate Taxicab distance
+		unsigned int distance = abs(red - (uint8_t) root_node->red)
+				    + abs(green - (uint8_t) root_node->green)
+				    + abs(blue - (uint8_t) root_node->blue);
+
+		if(distance < *best_distance) {
+			*best_distance = distance;
+			*current_best = root_node;
+		}
+		return;
+	}
+
+	// Try to traverse deeper if this is not a leaf node and the other side
+	// is not occupied
+	if(selected == NULL) {
+		selected = side ? root_node->left : root_node->right;
+	}
+
+	traverse_kd_tree(selected, current_best, best_distance, red, green, blue,
+					depth + 1);
+
+	// Boundary check for current node to check for sneaky nodes in
+	// other sections
+	unsigned int boundary_distance;
+	switch(depth % 3) {
+		case 0: boundary_distance = abs(root_node->red - red); break;
+		case 1: boundary_distance = abs(root_node->green - green); break;
+		case 2: boundary_distance = abs(root_node->blue - blue); break;
+	}
+
+	if(boundary_distance < *best_distance) {
+		// Check taxicab distance to the node itself when the boundary
+		// is closer than best
+		unsigned int distance = abs(red - (uint8_t) root_node->red)
+				    + abs(green - (uint8_t) root_node->green)
+				    + abs(blue - (uint8_t) root_node->blue);
+
+		if(distance < *best_distance) {
+			*best_distance = distance;
+			*current_best = root_node;
+		}
+
+		// Traverse further into the other side of tree to check for
+		// potential candidates
+		struct kd_node *opposite_node = side ? root_node->left : root_node->right;
+		if(opposite_node == NULL)
+			return;
+
+		traverse_kd_tree(opposite_node, current_best, best_distance,
+				red, green, blue, depth + 1);
+	}
+}
+
+struct kd_node * search_kd_tree(struct kd_node *root_node,
+	uint8_t red, uint8_t green, uint8_t blue)
+{
+	struct kd_node **current_best = malloc(sizeof(struct kd_node*));
+	*current_best = NULL;
+	unsigned int best_distance = UINT_MAX;
+	traverse_kd_tree(root_node, current_best, &best_distance,
+			red, green, blue, 0);
+	return *current_best;
+}
+
+void kd_tree_free(struct kd_node *root_node)
+{
+	if(root_node->left != NULL) kd_tree_free(root_node->left);
+	if(root_node->right != NULL) kd_tree_free(root_node->right);
+
+	free(root_node);
+}
+
 AFB_ERROR image_to_pal(AFB_IMAGE *img, AFB_PALETTE *pal)
 {
 	if (img->image_type == PALETTED)
 		return AFB_E_WRONG_TYPE;
 
 	unsigned int image_size = img->width * img->height;
+	unsigned int errors = 0;
+	unsigned int same_values = 0;
 
 	if (img->image_type == TRUECOLOR) {
+		struct kd_node *root_node = construct_kd_tree_from_pal(pal);
+
 		uint8_t *new_image_data = malloc(image_size);
-		int red, green, blue;
-		int current_squared_distance = 0;
-		int previous_squared_distance = INT_MAX;
-		int smallest_distance_index = 0;
+		uint8_t red, green, blue;
 
 		for (unsigned int i = 0; i < image_size; i++) {
-			current_squared_distance = 0;
-			previous_squared_distance = INT_MAX;
-			smallest_distance_index = 0;
-
 			red = img->image_data[i * 3 + 0];
 			green = img->image_data[i * 3 + 1];
 			blue = img->image_data[i * 3 + 2];
 
-			for (int y = 0; y < pal->size; y++) {
-				current_squared_distance =
-				    pow_of_two(red - (uint8_t)
-				                 afb_rgba_get_r(pal->colors[y]))
-				    + pow_of_two(green - (uint8_t)
-				                 afb_rgba_get_g(pal->colors[y]))
-				    + pow_of_two(blue - (uint8_t)
-				                 afb_rgba_get_b(pal->colors[y]));
-				if (current_squared_distance < previous_squared_distance) {
-					previous_squared_distance = current_squared_distance;
-					smallest_distance_index = y;
-				}
-			}
-			new_image_data[i] = smallest_distance_index;
+			struct kd_node *found_node = search_kd_tree(root_node,
+											red, green, blue);
+
+			new_image_data[i] = found_node->index;
 		}
 
 		// Check if these are null
@@ -157,7 +327,17 @@ AFB_ERROR image_to_pal(AFB_IMAGE *img, AFB_PALETTE *pal)
 
 		img->palette.colors = malloc(pal->size * sizeof(uint32_t));
 		memcpy(img->palette.colors, pal->colors, pal->size * sizeof(uint32_t));
+		kd_tree_free(root_node);
+	} else if (img->image_type == GRAYSCALE) {
+		img->palette.size = 256;
+		img->image_type = PALETTED;
+
+		img->palette.colors = malloc(img->palette.size * sizeof(uint32_t));
+		for (unsigned int i=0; i < img->palette.size; i++) {
+			img->palette.colors[i] = afb_to_rgba(i, i, i, 0xff);
+		}
 	}
+
 	return AFB_E_SUCCESS;
 }
 
