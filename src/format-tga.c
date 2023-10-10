@@ -271,3 +271,146 @@ AFB_ERROR afb_format_tga_load(AFB_IMAGE *img, char *path)
 
 	return AFB_E_SUCCESS;
 }
+
+AFB_ERROR afb_format_tga_save(AFB_IMAGE *img, char *path)
+{
+	uint8_t descriptorByte = 0; // xxxx0000 - Alpha depth
+								// xxx0xxxx - Order right to left
+								// xx0xxxxx - Order Top to bottom
+	unsigned int image_size;
+	unsigned int r, g, b;
+	FILE *f_tga = NULL;
+	f_tga = fopen(path, "w");
+
+	/* Return error if we can't open the file */
+	if (f_tga == NULL)
+		return AFB_E_FILE_ERROR;
+	
+	// idLength
+	uint8_t idlength = 0x00;
+	fwrite(&idlength, 1, 1, f_tga);
+
+	// colorMapType
+	uint8_t colormaptype = TGA_MAP_NOCOLORMAP;
+	if (img->image_type == PALETTED)
+		colormaptype = TGA_MAP_COLORMAP;
+
+	fwrite(&colormaptype, 1, 1, f_tga);
+
+	// imageType
+	uint8_t imagetype;
+	switch (img->image_type) {
+	case PALETTED:
+		imagetype = TGA_IMG_COLORMAPPED;
+		break;
+	case GRAYSCALE:
+		imagetype = TGA_IMG_BLACKWHITE;
+		break;
+	case TRUECOLOR:
+	case TRUECOLOR_ALPHA: // Fallthrough
+		imagetype = TGA_IMG_TRUECOLOR;
+		break;
+	default:
+		return AFB_E_WRONG_TYPE;
+	}
+
+	fwrite(&imagetype, 1, 1, f_tga);
+
+	// entryIndex
+	uint16_t entryindex = 0x0000;
+	fwrite(&entryindex, sizeof(uint16_t), 1, f_tga);
+
+	// entryLength
+	uint16_t entrylength = 0x0000;
+	if (img->image_type == PALETTED)
+		entrylength = img->palette.size;
+
+	fwrite(&entrylength, sizeof(uint16_t), 1, f_tga);
+
+	// bpp
+	uint8_t bpp = 0;
+	if (img->image_type == PALETTED)
+		bpp = 24; // 24 bits per pixel
+
+	fwrite(&bpp, 1, 1, f_tga); 
+
+	// xOrigin
+	uint16_t xorigin = 0x0000;
+	fwrite(&xorigin, sizeof(uint16_t), 1, f_tga);
+
+	// yOrigin
+	uint16_t yorigin = 0x0000;
+	fwrite(&yorigin, sizeof(uint16_t), 1, f_tga);
+
+	// width
+	uint16_t width = img->width;
+	fwrite(&width, sizeof(uint16_t), 1, f_tga);
+
+	// height
+	uint16_t height = img->height;
+	fwrite(&height, sizeof(uint16_t), 1, f_tga);
+
+	// depth (bits per pixel in imageData)
+	uint8_t depth = 0;
+
+	switch (img->image_type) {
+	case PALETTED:
+	case GRAYSCALE: // Fallthrough
+		depth = 8;
+		break;
+	case TRUECOLOR:
+		depth = 24;
+		break;
+	case TRUECOLOR_ALPHA:
+		depth = 32;
+		break;
+	default:
+		return AFB_E_WRONG_TYPE;
+	}
+
+	fwrite(&depth, 1, 1, f_tga);
+
+	// imageDesc
+	descriptorByte = 0x20;
+	if (img->image_type == TRUECOLOR_ALPHA)
+		descriptorByte += 0x8;
+
+	fwrite(&descriptorByte, sizeof(descriptorByte), 1, f_tga);
+
+	// colorMapData
+	
+	for (unsigned int i=0; i < img->palette.size; i++) {
+		r = afb_rgba_get_r(img->palette.colors[i]);
+		g = afb_rgba_get_g(img->palette.colors[i]);
+		b = afb_rgba_get_b(img->palette.colors[i]);
+		fwrite(&b, 1, 1, f_tga);
+		fwrite(&g, 1, 1, f_tga);
+		fwrite(&r, 1, 1, f_tga);
+	}
+
+	// imageData
+	image_size = img->width * img->height;
+
+	if (img->image_type == TRUECOLOR) {
+		for (unsigned int i=0; i < image_size; i++) {
+			fwrite(&img->image_data[i * 3 + 2], 1, 1, f_tga);
+			fwrite(&img->image_data[i * 3 + 1], 1, 1, f_tga);
+			fwrite(&img->image_data[i * 3 + 0], 1, 1, f_tga);
+		}
+	} else if (img->image_type == TRUECOLOR_ALPHA) {
+		for (unsigned int i=0; i < image_size; i++) {
+			fwrite(&img->image_data[i * 3 + 2], 1, 1, f_tga);
+			fwrite(&img->image_data[i * 3 + 1], 1, 1, f_tga);
+			fwrite(&img->image_data[i * 3 + 0], 1, 1, f_tga);
+			fwrite(&img->image_data[i * 3 + 3], 1, 1, f_tga);
+		}
+	} else {
+		for (unsigned int i=0; i < image_size; i++) {
+			fwrite(&img->image_data[i], 1, 1, f_tga);
+		}
+	}
+
+	fclose(f_tga);
+
+	return AFB_E_SUCCESS;
+}
